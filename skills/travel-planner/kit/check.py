@@ -1,4 +1,4 @@
-"""Checks a built trip. Usage: python3 check.py <trip-folder> [--shots]
+"""Checks a built trip. Usage: python3 check.py <trip-folder> [--shots] [--pdf]
 Prints ALL CHECKS PASSED or the list of problems. Fix trip.json and rebuild; never patch the page."""
 import functools, http.server, json, os, sys, threading
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +84,28 @@ def page_checks(out):
     return bad
 
 
+def pdf_checks(out, t):
+    import pypdf
+    path = os.path.join(out, "trip-book.pdf")
+    if not os.path.exists(path):
+        return ["trip-book.pdf missing: run pdf.py"]
+    bad, r = [], pypdf.PdfReader(path)
+    texts = [pg.extract_text() or "" for pg in r.pages]
+    links = [sum(1 for a in (pg.get("/Annots") or []) if a.get_object().get("/A", {}).get("/URI")) for pg in r.pages]
+    starts = {}
+    for i, d in enumerate(t["days"]):
+        hits = [k for k, tx in enumerate(texts) if k > 0 and d["title"] in tx[:160]]
+        if not hits: bad.append(f"PDF: no page for day {i + 1} ({d['title']})"); continue
+        starts[hits[0]] = i
+        if not os.path.exists(os.path.join(out, "maps", f"day-{i + 1}.png")): bad.append(f"PDF: no map for day {i + 1}")
+        if d.get("gmaps") and links[hits[0]] == 0: bad.append(f"PDF: day {i + 1} page has no working links")
+    for k in sorted(starts):
+        nxt = k + 1
+        if nxt < len(texts) and nxt not in starts and not any(h in texts[nxt] for h in ("Budget", "Orçamento", "Practical", "Informações", "Infos pratiques")):
+            bad.append(f"PDF: day {starts[k] + 1} runs onto a second page (shorten it or split the day)")
+    return bad
+
+
 if __name__ == "__main__":
     folder = sys.argv[1]
     out = os.path.join(folder, "out")
@@ -91,5 +113,7 @@ if __name__ == "__main__":
     bad = data_checks(t)
     if "--shots" in sys.argv:
         bad += page_checks(out)
+    if "--pdf" in sys.argv:
+        bad += pdf_checks(out, t)
     print("ALL CHECKS PASSED" if not bad else "PROBLEMS:\n- " + "\n- ".join(bad))
     sys.exit(1 if bad else 0)

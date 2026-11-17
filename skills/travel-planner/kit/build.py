@@ -18,6 +18,7 @@ def render(trip, light):
     p = p.replace("/*__LEAFLET_CSS__*/", open(os.path.join(HERE, "templates", "leaflet.css")).read())
     p = p.replace("/*__TRIP__*/null", json.dumps(trip, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
     p = p.replace("/*__LIGHT__*/null", json.dumps(light, separators=(",", ":")))
+    p = p.replace("/*__I18N__*/", open(os.path.join(HERE, "templates", "i18n.js"), encoding="utf-8").read())
     return p
 
 

@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;650&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* A4 Trip Book: same palette and type as the trip page, light only. One day per page; everything else flows. */
+:root{--ink:#1b2426;--muted:#56625f;--line:#d7dcd9;--accent:#1f6f78;--warn:#a5631a;--tint:#f2f3f1;
+  --d1:#1f6f78;--d2:#8a2f45;--d3:#9a5d17;--d4:#4b5a9c;--d5:#3f7d3a;--d6:#8b4a9c;--d7:#a1453a;
+  --font-display:"Bitter",Georgia,serif;--font-body:"Source Sans 3",system-ui,sans-serif}
+@page{size:A4;margin:16mm 15mm 18mm}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:10.5pt/1.45 var(--font-body);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1,h2{font-family:var(--font-display);font-weight:650;margin:0;line-height:1.15}
+h1{font-size:30pt}
+h2{font-size:17pt;margin-bottom:3mm}
+h3{font-size:8.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6mm 0 2mm;font-weight:600}
+a{color:var(--accent);text-decoration:none}
+.sec{break-before:page}
+.eyebrow{font-size:9pt;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cover .lead{font-size:12pt;color:var(--muted);margin:3mm 0 6mm}
+.cover img.map{width:100%;border:1px solid var(--line);border-radius:3mm;display:block}
+.cover .foot{display:grid;grid-template-columns:1fr 34mm;gap:8mm;align-items:end;margin-top:7mm}
+.qr svg{width:34mm;height:34mm;display:block}
+.qr p{font-size:8pt;color:var(--muted);margin:1mm 0 0;text-align:center}
+.days{display:grid;gap:1.5mm;margin-top:2mm}
+.days div{display:grid;grid-template-columns:4mm 28mm 1fr auto;gap:3mm;align-items:center;font-variant-numeric:tabular-nums}
+.sw{width:3mm;height:3mm;border-radius:50%;background:var(--c)}
+.muted{color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:1.3mm 2mm;border-bottom:.3mm solid var(--line);vertical-align:top}
+th{font-size:8pt;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr{break-inside:avoid}
+.box{display:inline-block;width:3.6mm;height:3.6mm;border:.35mm solid var(--ink);border-radius:.8mm;vertical-align:-.6mm}
+.late{color:var(--warn);font-weight:600}
+.dayhead{border-top:2mm solid var(--c);padding-top:3mm}
+.facts{display:flex;flex-wrap:wrap;gap:1mm 6mm;color:var(--muted);font-size:9.5pt;margin-bottom:3mm;font-variant-numeric:tabular-nums}
+img.daymap{width:100%;border:1px solid var(--line);border-radius:2mm;display:block;margin-bottom:3mm}
+.num{display:inline-grid;place-items:center;width:5mm;height:5mm;border-radius:50%;background:var(--c);color:#fff;font-size:7.5pt;font-weight:600;margin-right:1.5mm;vertical-align:.2mm}
+tr.leg td{border-bottom:0;padding-top:0;padding-bottom:0;font-size:8.5pt;color:var(--muted)}
+.tip{font-size:9.5pt}
+.note{border:.3mm solid var(--line);border-radius:2mm;padding:2.5mm 3mm;margin-top:3mm;font-size:9.5pt;break-inside:avoid}
+.links a{display:block;font-size:9.5pt}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:0 3mm}.notes .note{margin-top:2.5mm}.notes .links{grid-column:1/-1}
+td.cur,th.cur{background:var(--tint)}
+tr.tot td{font-weight:600;border-bottom:0}
+.big{font-family:var(--font-display);font-size:20pt;font-weight:650}
+.small{font-size:8.5pt;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+dl{display:grid;grid-template-columns:auto 1fr;gap:1mm 5mm;margin:0}
+dt{color:var(--muted)}dd{margin:0}
+</style></head>
+<body>
+<div id="book"></div>
+<script>
+const TRIP = /*__TRIP__*/null;
+const MAPS = /*__MAPS__*/null;
+const QR = /*__QR__*/null;
+const URLP = /*__URL__*/null;
+/*__I18N__*/
+const t = I18N[TRIP.trip.lang] || I18N.en, B = { ...I18N.en.book, ...(t.book || {}) };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const D = s => new Date(s + "T12:00:00");
+const wd = s => t.wd[(D(s).getDay() + 6) % 7];
+const dshort = s => `${wd(s)} ${D(s).getDate()}/${D(s).getMonth() + 1}`;
+const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`;
+const host = u => { try { return new URL(u).hostname.replace("www.", ""); } catch (e) { return u; } };
+const people = (TRIP.group.adults || 0) + (TRIP.group.children || []).length || 1, ndays = TRIP.days.length;
+const money = n => new Intl.NumberFormat(TRIP.trip.lang, { style: "currency", currency: TRIP.budget?.currency || "EUR", maximumFractionDigits: 0 }).format(n);
+const C = i => `var(--d${(i % 7) + 1})`;
+const per = (l, v) => { const a = l[v] || 0; return { group: a, person: a * people, "person-day": a * people * ndays, day: a * ndays }[l.per || "group"] ?? a; };
+const today = new Date(); today.setHours(12, 0, 0, 0);
+
+function cover() {
+  const tr = TRIP.trip;
+  return `<section class="cover"><div class="eyebrow">${B.title}</div><h1>${esc(tr.title)}</h1>
+    <p class="lead">${dshort(tr.start)} – ${dshort(tr.end)} · ${ndays} ${t.days} · ${people} ${t.people}${tr.from ? ` · ${esc(tr.from)} →` : ""}</p>
+    ${MAPS.overview ? `<img class="map" src="${MAPS.overview.src}" alt="">` : ""}
+    <div class="foot"><div><h3>${B.dayByDay}</h3><div class="days">${TRIP.days.map((d, i) => `<div style="--c:${C(i)}"><span class="sw"></span><span>${dshort(d.date)}</span><span>${esc(d.title)}</span><span class="muted">${d.km} km · ${fmtMin(d.minutes || 0)}</span></div>`).join("")}</div>
+      ${tr.note ? `<p class="small" style="margin-top:4mm">${esc(tr.note)}</p>` : ""}</div>
+      ${QR ? `<div class="qr">${URLP ? `<a href="${esc(URLP)}">${QR}</a>` : QR}<p>${B.scan}</p></div>` : "<div></div>"}</div></section>`;
+}
+function todos() {
+  const list = [...(TRIP.todos || [])].sort((a, b) => (a.due || "9").localeCompare(b.due || "9"));
+  if (!list.length) return "";
+  return `<section class="sec"><h2>${B.beforeGo}</h2><table><thead><tr><th></th><th>${B.task}</th><th>${B.due}</th><th class="n">${B.cost}</th></tr></thead><tbody>
+    ${list.map(x => `<tr><td style="width:6mm"><span class="box"></span></td><td>${esc(x.text)} <span class="small">· ${t.cats[x.category] || x.category || ""}${x.owner ? ` · ${esc(x.owner)}` : ""}</span>${x.link ? `<br><a href="${esc(x.link)}">${esc(host(x.link))}</a>` : ""}</td>
+      <td class="${x.due && D(x.due) < today ? "late" : ""}" style="white-space:nowrap">${x.due ? dshort(x.due) : ""}</td><td class="n">${esc(x.cost || "")}</td></tr>`).join("")}</tbody></table>
+    ${(TRIP.lodging || []).length ? `<h3>${t.lodging}</h3><table><thead><tr><th>${t.category === undefined ? "" : ""}</th><th>${B.nights}</th><th>${B.place}</th><th class="n">${B.perNight}</th></tr></thead><tbody>
+      ${TRIP.lodging.map(l => `<tr><td><b>${esc(l.city)}</b></td><td>${l.nights.map(dshort).join(", ")}</td><td>${l.picked?.link ? `<a href="${esc(l.picked.link)}">${esc(l.picked.name)}</a>` : esc(l.picked?.name || "")}${l.picked?.area ? ` <span class="small">· ${esc(l.picked.area)}</span>` : ""}</td><td class="n">${l.picked?.price_night ? money(l.picked.price_night) : ""}</td></tr>`).join("")}</tbody></table>` : ""}
+    <p class="small" style="margin-top:4mm">${B.verify}</p></section>`;
+}
+function dayPage(d, i) {
+  const night = (TRIP.lodging || []).find(l => l.nights.includes(d.date));
+  const wdk = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][(D(d.date).getDay() + 6) % 7];
+  const rows = d.stops.map((s, k) => `${k && d.legs?.[k - 1] ? `<tr class="leg"><td></td><td colspan="3">↓ ${d.legs[k - 1].km} km · ${fmtMin(d.legs[k - 1].min)}${d.legs[k - 1].estimate ? ` (${t.estimate})` : ""}</td></tr>` : ""}
+    <tr><td style="white-space:nowrap">${s.time || ""}</td><td><span class="num">${k + 1}</span><b>${esc(s.name)}</b>${(s.closed || []).includes(wdk) ? ` <span class="late">${t.closed}</span>` : ""}${s.tip ? `<div class="tip">${esc(s.tip)}</div>` : ""}
+      <div class="small">${s.link ? `<a href="${esc(s.link)}">${esc(host(s.link))}</a> · ` : ""}${s.gmaps ? `<a href="${esc(s.gmaps)}">Google Maps</a>` : ""}</div></td>
+      <td style="white-space:nowrap">${s.minutes ? fmtMin(s.minutes) : ""}</td><td>${[s.hours, s.price].filter(Boolean).map(esc).join("<br>")}</td></tr>`).join("");
+  return `<section class="sec day" data-day="${i + 1}" style="--c:${C(i)}"><div class="dayhead"><div class="eyebrow">${t.day} ${i + 1} · ${dshort(d.date)}</div><h2>${esc(d.title)}</h2></div>
+    <div class="facts"><span>${t[d.mode] || d.mode}</span><span>${d.km} km</span><span>${fmtMin(d.minutes || 0)} ${t.moving}</span></div>
+    ${MAPS["day-" + (i + 1)] ? `<img class="daymap" style="height:${MAPS["day-" + (i + 1)].mm}mm" src="${MAPS["day-" + (i + 1)].src}" alt="">` : ""}
+    <table><thead><tr><th>${B.time}</th><th>${B.place}</th><th>${B.stay}</th><th>${B.details}</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="notes">    ${(d.gmaps || []).length ? `<div class="note links">${d.gmaps.map(l => `<a href="${esc(l.url)}">${t.gmaps}: ${esc(l.from)} → ${esc(l.to)}</a>`).join("")}</div>` : ""}
+    ${night ? `<div class="note"><b>${t.sleep}:</b> ${night.picked?.link ? `<a href="${esc(night.picked.link)}">${esc(night.picked.name)}</a>` : esc(night.picked?.name || "")}${night.picked?.area ? ` · ${esc(night.picked.area)}` : ""}</div>` : ""}
+    ${d.rain_plan ? `<div class="note"><b>${t.rain}:</b> ${esc(d.rain_plan)}</div>` : ""}
+    ${(d.tips || []).length ? `<div class="note"><b>${t.tips}:</b> ${d.tips.map(esc).join(" ")}</div>` : ""}</div></section>`;
+}
+function budget() {
+  const Bg = TRIP.budget; if (!Bg || !Bg.lines?.length) return "";
+  const V = ["saver", "standard", "comfort"], tot = v => Bg.lines.reduce((s, l) => s + per(l, v), 0) * 1.1;
+  const unit = l => ({ group: "", person: ` × ${people}`, "person-day": ` × ${people} × ${ndays}`, day: ` × ${ndays}` }[l.per || "group"]);
+  return `<section class="sec"><h2>${t.budget}</h2>
+    <p class="muted" style="margin:0 0 3mm">${people} ${t.people} · ${ndays} ${t.days}</p>
+    <table><thead><tr><th>${t.item}</th>${V.map(v => `<th class="n${v === "standard" ? " cur" : ""}">${t[v]}</th>`).join("")}</tr></thead><tbody>
+    ${Bg.lines.map(l => `<tr><td>${l.indicative ? "≈ " : ""}${esc(l.label)} <span class="small">· ${t.cats[l.category] || l.category}${unit(l)}</span></td>${V.map(v => `<td class="n${v === "standard" ? " cur" : ""}">${money(per(l, v))}</td>`).join("")}</tr>`).join("")}
+    <tr><td>${t.buffer}</td>${V.map(v => `<td class="n${v === "standard" ? " cur" : ""}">${money(tot(v) / 11)}</td>`).join("")}</tr>
+    <tr class="tot"><td>${t.total}</td>${V.map(v => `<td class="n${v === "standard" ? " cur" : ""}"><span class="big">${money(tot(v))}</span></td>`).join("")}</tr>
+    <tr><td class="muted">${t.perPerson}</td>${V.map(v => `<td class="n muted${v === "standard" ? " cur" : ""}">${money(tot(v) / people)}</td>`).join("")}</tr></tbody></table>
+    ${Bg.lines.some(l => l.indicative) ? `<p class="small">${t.indicative}</p>` : ""}</section>`;
+}
+function practical() {
+  const P = TRIP.practical || {}, src = TRIP.sources || [];
+  return `<section class="sec"><div class="cols"><div><h2>${t.practical}</h2>
+    <dl>${P.emergency ? `<dt>${t.emergency}</dt><dd>${esc(P.emergency)}</dd>` : ""}${P.currency ? `<dt>${t.currency}</dt><dd>${esc(P.currency)}</dd>` : ""}${P.plugs ? `<dt>${t.plugs}</dt><dd>${esc(P.plugs)}</dd>` : ""}</dl>
+    ${(P.notes || []).map(n => `<p>${esc(n)}</p>`).join("")}</div>
+    <div>${(TRIP.packing || []).length ? `<h2>${t.packing}</h2>${TRIP.packing.map(p => `<div style="margin-bottom:1.5mm"><span class="box"></span> ${esc(p)}</div>`).join("")}` : ""}</div></div>
+    <h3>${B.credits}</h3>
+    ${src.map(s => `<div class="small"><a href="${esc(s.url)}">${esc(s.title)}</a></div>`).join("")}
+    <p class="small">Map data © OpenStreetMap contributors (ODbL), OpenMapTiles, OpenFreeMap. Routes: OSRM, routing.openstreetmap.de. ${B.made}.</p></section>`;
+}
+document.getElementById("book").innerHTML = cover() + todos() + TRIP.days.map(dayPage).join("") + budget() + practical();
+document.fonts.ready.then(() => { window.BOOK_READY = true; });
+</script>
+</body></html>
