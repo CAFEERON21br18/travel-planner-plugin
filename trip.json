@@ -1,0 +1,364 @@
+{
+ "trip": {
+  "title": "Porto & Douro",
+  "type": "short",
+  "lang": "en",
+  "from": "Lisbon",
+  "start": "2026-11-13",
+  "end": "2026-11-15",
+  "purpose": [
+   "cultural",
+   "food",
+   "discovery"
+  ],
+  "pace": "balanced",
+  "max_drive_hours": 3,
+  "country": "pt",
+  "note": "Sample trip for testing the kit. Hours and prices are placeholders, not checked."
+ },
+ "group": {
+  "adults": 2,
+  "children": [],
+  "friends_trip": false,
+  "names": []
+ },
+ "days": [
+  {
+   "date": "2026-11-13",
+   "city": "Porto",
+   "title": "Porto on foot",
+   "mode": "foot",
+   "rain_plan": "Swap the bridge walk for a longer port cellar visit in Gaia.",
+   "stops": [
+    {
+     "id": "d1s1",
+     "name": "Livraria Lello",
+     "query": "Livraria Lello, Porto",
+     "kind": "sight",
+     "time": "09:30",
+     "minutes": 45,
+     "price": "ticket",
+     "link": "https://www.livrarialello.pt",
+     "tip": "Book a timed ticket; the queue is long by 10:00."
+    },
+    {
+     "id": "d1s2",
+     "name": "Torre dos Clérigos",
+     "query": "Torre dos Clérigos, Porto",
+     "kind": "view",
+     "time": "10:30",
+     "minutes": 60,
+     "link": "https://www.torredosclerigos.pt"
+    },
+    {
+     "id": "d1s3",
+     "name": "São Bento station",
+     "query": "Estação de São Bento, Porto",
+     "kind": "sight",
+     "time": "11:45",
+     "minutes": 20,
+     "price": "free",
+     "tip": "Look up: the tile panels in the hall."
+    },
+    {
+     "id": "d1s4",
+     "name": "Lunch at the Ribeira",
+     "query": "Cais da Ribeira, Porto",
+     "kind": "food",
+     "time": "12:30",
+     "minutes": 75
+    },
+    {
+     "id": "d1s5",
+     "name": "Ponte Luís I, upper deck",
+     "query": "Ponte Luís I, Porto",
+     "kind": "view",
+     "time": "14:00",
+     "minutes": 30,
+     "price": "free"
+    },
+    {
+     "id": "d1s6",
+     "name": "Serra do Pilar viewpoint",
+     "query": "Mosteiro da Serra do Pilar, Vila Nova de Gaia",
+     "kind": "view",
+     "time": "14:45",
+     "minutes": 30,
+     "price": "free"
+    },
+    {
+     "id": "d1s7",
+     "name": "Port cellar tour",
+     "query": "Caves Ferreira, Vila Nova de Gaia",
+     "kind": "activity",
+     "time": "15:45",
+     "minutes": 75
+    }
+   ]
+  },
+  {
+   "date": "2026-11-14",
+   "city": "Peso da Régua",
+   "title": "Into the Douro valley",
+   "mode": "car",
+   "tips": [
+    "Pick up the rental car the evening before to leave early."
+   ],
+   "stops": [
+    {
+     "id": "d2s1",
+     "name": "Porto, Ribeira",
+     "query": "Cais da Ribeira, Porto",
+     "kind": "transport",
+     "time": "09:00",
+     "minutes": 0
+    },
+    {
+     "id": "d2s2",
+     "name": "Museu do Douro",
+     "query": "Museu do Douro, Peso da Régua",
+     "kind": "sight",
+     "time": "10:45",
+     "minutes": 90,
+     "link": "https://www.museudodouro.pt"
+    },
+    {
+     "id": "d2s3",
+     "name": "Lunch in Régua",
+     "query": "Peso da Régua",
+     "kind": "food",
+     "time": "12:30",
+     "minutes": 75
+    },
+    {
+     "id": "d2s4",
+     "name": "São Leonardo de Galafura",
+     "query": "Miradouro de São Leonardo de Galafura",
+     "kind": "view",
+     "time": "14:15",
+     "minutes": 30,
+     "price": "free"
+    },
+    {
+     "id": "d2s5",
+     "name": "Pinhão station",
+     "query": "Estação do Pinhão",
+     "kind": "sight",
+     "time": "15:30",
+     "minutes": 30,
+     "price": "free",
+     "tip": "More tile panels, this time about the wine harvest."
+    }
+   ]
+  },
+  {
+   "date": "2026-11-15",
+   "city": "Pinhão",
+   "title": "Back via Amarante",
+   "mode": "car",
+   "stops": [
+    {
+     "id": "d3s1",
+     "name": "Pinhão station",
+     "query": "Estação do Pinhão",
+     "kind": "transport",
+     "time": "09:30",
+     "minutes": 0
+    },
+    {
+     "id": "d3s2",
+     "name": "Casal de Loivos viewpoint",
+     "query": "Miradouro de Casal de Loivos",
+     "kind": "view",
+     "time": "09:45",
+     "minutes": 30,
+     "price": "free"
+    },
+    {
+     "id": "d3s3",
+     "name": "Ponte de São Gonçalo",
+     "query": "Ponte de São Gonçalo, Amarante",
+     "kind": "sight",
+     "time": "11:30",
+     "minutes": 60,
+     "price": "free"
+    },
+    {
+     "id": "d3s4",
+     "name": "Lunch in Amarante",
+     "query": "Amarante, Porto",
+     "kind": "food",
+     "time": "12:45",
+     "minutes": 75
+    },
+    {
+     "id": "d3s5",
+     "name": "Porto, Ribeira",
+     "query": "Cais da Ribeira, Porto",
+     "kind": "transport",
+     "time": "15:00",
+     "minutes": 0
+    }
+   ]
+  }
+ ],
+ "lodging": [
+  {
+   "city": "Porto",
+   "nights": [
+    "2026-11-13"
+   ],
+   "picked": {
+    "name": "Hotel in the Baixa",
+    "area": "Baixa",
+    "price_night": 120
+   }
+  },
+  {
+   "city": "Pinhão",
+   "nights": [
+    "2026-11-14"
+   ],
+   "picked": {
+    "name": "Quinta guesthouse",
+    "area": "Pinhão",
+    "price_night": 140
+   }
+  }
+ ],
+ "todos": [
+  {
+   "id": "t1",
+   "text": "Buy the train tickets Lisbon–Porto",
+   "due": "2026-11-06",
+   "cost": "€140",
+   "category": "book"
+  },
+  {
+   "id": "t2",
+   "text": "Book the hotel in Porto (1 night)",
+   "due": "2026-11-03",
+   "cost": "€120",
+   "category": "book"
+  },
+  {
+   "id": "t3",
+   "text": "Book the guesthouse in Pinhão (1 night)",
+   "due": "2026-11-03",
+   "cost": "€140",
+   "category": "book"
+  },
+  {
+   "id": "t4",
+   "text": "Book the rental car, Porto pick-up and drop-off",
+   "due": "2026-11-06",
+   "cost": "€90",
+   "category": "book"
+  },
+  {
+   "id": "t5",
+   "text": "Book the Livraria Lello timed ticket",
+   "due": "2026-11-10",
+   "category": "book",
+   "link": "https://www.livrarialello.pt"
+  },
+  {
+   "id": "t6",
+   "text": "Check the Museu do Douro opening hours for Saturday",
+   "due": "2026-11-10",
+   "category": "other",
+   "link": "https://www.museudodouro.pt"
+  },
+  {
+   "id": "t7",
+   "text": "Pack a rain jacket",
+   "due": "2026-11-12",
+   "category": "pack"
+  }
+ ],
+ "budget": {
+  "currency": "EUR",
+  "lines": [
+   {
+    "category": "getting-there",
+    "label": "Train Lisbon–Porto, return",
+    "saver": 50,
+    "standard": 70,
+    "comfort": 110,
+    "per": "person",
+    "indicative": true
+   },
+   {
+    "category": "sleep",
+    "label": "Porto, 1 night",
+    "saver": 70,
+    "standard": 120,
+    "comfort": 220,
+    "per": "group"
+   },
+   {
+    "category": "sleep",
+    "label": "Pinhão, 1 night",
+    "saver": 80,
+    "standard": 140,
+    "comfort": 300,
+    "per": "group"
+   },
+   {
+    "category": "car",
+    "label": "Rental car, 2 days",
+    "saver": 70,
+    "standard": 90,
+    "comfort": 140,
+    "per": "group",
+    "indicative": true
+   },
+   {
+    "category": "car",
+    "label": "Fuel and tolls, about 300 km",
+    "saver": 45,
+    "standard": 45,
+    "comfort": 45,
+    "per": "group"
+   },
+   {
+    "category": "food",
+    "label": "Meals",
+    "saver": 25,
+    "standard": 45,
+    "comfort": 80,
+    "per": "person-day"
+   },
+   {
+    "category": "activities",
+    "label": "Lello, Clérigos, port tasting, museum",
+    "saver": 30,
+    "standard": 40,
+    "comfort": 70,
+    "per": "person"
+   },
+   {
+    "category": "insurance",
+    "label": "Travel insurance",
+    "saver": 0,
+    "standard": 10,
+    "comfort": 20,
+    "per": "person"
+   }
+  ]
+ },
+ "practical": {
+  "emergency": "112",
+  "currency": "Euro",
+  "plugs": "Type F, 230 V",
+  "notes": [
+   "Tolls on the A4 and A24 are electronic on some stretches: ask the rental firm about a toll device."
+  ]
+ },
+ "packing": [
+  "Rain jacket",
+  "Comfortable walking shoes",
+  "Phone charger for the car"
+ ],
+ "sources": []
+}

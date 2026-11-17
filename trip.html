@@ -1,0 +1,410 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;650&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: header, tab strip, then map (60%) beside the panel; Budget and To-dos use the full width. One colour per day. */
+:root{
+  --bg:#f2f3f1;--surface:#ffffff;--ink:#1b2426;--muted:#56625f;--line:#d7dcd9;--accent:#1f6f78;--good:#2f7a4a;--warn:#a5631a;
+  --d1:#1f6f78;--d2:#8a2f45;--d3:#9a5d17;--d4:#4b5a9c;--d5:#3f7d3a;--d6:#8b4a9c;--d7:#a1453a;
+  --map-land:#eceee9;--map-water:#a9cbd3;--map-urban:#e0e2dc;--map-building:#d2d5ce;--map-road:#ffffff;--map-major:#f1d79f;--map-case:#c4c8c1;--map-label:#36403f;--map-halo:#ffffff;--map-border:#8f9894;
+  --font-display:"Bitter",Georgia,serif;--font-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111617;--surface:#192021;--ink:#e6ebe9;--muted:#9aa7a4;--line:#2b3435;--accent:#62b6be;--good:#6cc08a;--warn:#e2a457;
+  --d1:#62b6be;--d2:#de8199;--d3:#e2a457;--d4:#9aa8f0;--d5:#86c97f;--d6:#cf93e0;--d7:#ec8f82;
+  --map-land:#1a2021;--map-water:#1e3a42;--map-urban:#222a2b;--map-building:#2d3637;--map-road:#3b4546;--map-major:#6e5c3a;--map-case:#131819;--map-label:#cbd4d2;--map-halo:#111617;--map-border:#5d6866;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111617;--surface:#192021;--ink:#e6ebe9;--muted:#9aa7a4;--line:#2b3435;--accent:#62b6be;--good:#6cc08a;--warn:#e2a457;
+  --d1:#62b6be;--d2:#de8199;--d3:#e2a457;--d4:#9aa8f0;--d5:#86c97f;--d6:#cf93e0;--d7:#ec8f82;
+  --map-land:#1a2021;--map-water:#1e3a42;--map-urban:#222a2b;--map-building:#2d3637;--map-road:#3b4546;--map-major:#6e5c3a;--map-case:#131819;--map-label:#cbd4d2;--map-halo:#111617;--map-border:#5d6866;color-scheme:dark}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+h1{font-family:var(--font-display);font-weight:650;font-size:clamp(26px,4vw,36px);line-height:1.15;margin:4px 0 6px;text-wrap:balance}
+h2{font-family:var(--font-display);font-weight:650;font-size:20px;margin:0 0 2px;text-wrap:balance}
+h3{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:600}
+.lead{color:var(--muted);margin:0 0 16px;max-width:65ch}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tabs,.seg{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;display:flex;align-items:center;gap:8px}
+.tab .sw{width:10px;height:10px;border-radius:50%;background:var(--c,var(--muted))}
+.tab[aria-selected="true"]{border-color:var(--ink);font-weight:600}
+.seg button{border:1px solid var(--line);background:transparent;border-radius:6px;padding:5px 10px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);border-color:var(--ink)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+.grid.wide{grid-template-columns:minmax(0,1fr)}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.mapcol{position:sticky;top:12px}
+@media (max-width:820px){.mapcol{position:static}}
+.mapbox{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--map-land);height:clamp(340px,72vh,720px)}
+@media (max-width:820px){.mapbox{height:52vh;min-height:300px}}
+.mapbox > .map{position:absolute;inset:0;width:100%;height:100%}
+.credit{font-size:11px;color:var(--muted);margin-top:6px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.facts{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;margin-bottom:10px}
+.timeline{width:100%;height:auto;display:block;margin:4px 0 6px}
+.timeline text{font-size:10.5px;fill:var(--muted);font-variant-numeric:tabular-nums}
+ol.stops{list-style:none;margin:0;padding:0}
+.stop{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;padding:8px 6px;border-radius:8px;cursor:pointer}
+.stop:hover,.stop.on{background:color-mix(in srgb,var(--c) 10%,transparent)}
+.stop .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.stop .meta{font-size:13px;color:var(--muted)}
+.stop .tip{font-size:13px;margin-top:2px}
+.num{width:24px;height:24px;border-radius:50%;background:var(--c);color:var(--surface);font-size:12px;font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.leg{font-size:12px;color:var(--muted);padding:0 0 0 44px;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted);margin-left:6px;vertical-align:1px}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+.links{margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:14px}
+.days{display:grid;gap:10px}
+.dayrow{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;text-align:left}
+.dayrow .sw{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.dayrow small{color:var(--muted);font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+.big{font-family:var(--font-display);font-size:34px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.1}
+.tiles{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end;margin:6px 0 4px}
+.tiles small{display:block;color:var(--muted);font-size:13px}
+.bars{display:grid;gap:8px;margin-top:8px}
+.brow{display:grid;grid-template-columns:minmax(90px,140px) minmax(0,1fr) 84px;gap:10px;align-items:center;font-size:14px;font-variant-numeric:tabular-nums}
+.brow .track{height:12px;background:color-mix(in srgb,var(--line) 60%,transparent);border-radius:6px;overflow:hidden}
+.brow .fill{height:100%;background:var(--accent);border-radius:6px}
+.brow span:last-child{text-align:right}
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+tr.tot td{font-weight:600;font-size:15px;border-bottom:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+td.cur,th.cur{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.todo{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 4px;border-bottom:1px solid var(--line)}
+.todo input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
+.todo.done .what{text-decoration:line-through;color:var(--muted)}
+.todo .due{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.due.late{color:var(--warn);font-weight:600}
+.todo .meta{font-size:13px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.pin{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;border:2px solid var(--surface);font:600 12px/20px var(--font-body);text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3);cursor:pointer;transition:transform .15s}
+.pin.on{transform:scale(1.25)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);border:2px solid var(--surface)}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+.leaflet-container{background:var(--map-water)!important;font-family:var(--font-body)}
+.maplibregl-ctrl-attrib,.leaflet-control-attribution{font-size:11px}
+/*__MAPLIBRE_CSS__*/
+/*__LEAFLET_CSS__*/
+.leaflet-tooltip.town{background:transparent;border:0;box-shadow:none;color:var(--map-label);font-size:11px;text-shadow:0 0 3px var(--map-halo),0 0 3px var(--map-halo)}
+.leaflet-tooltip.town::before{display:none}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow" id="eyebrow"></div>
+  <h1 id="title"></h1>
+  <p class="lead" id="note"></p>
+  <div class="bar">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="seg" id="mapseg"><button type="button" id="b-street" aria-pressed="true"></button><button type="button" id="b-light" aria-pressed="false"></button></div>
+  </div>
+  <div class="grid" id="grid">
+    <div class="mapcol" id="mapcol">
+      <div class="mapbox"><div class="map" id="map"></div><div class="map" id="lmap" hidden></div></div>
+      <div class="credit" id="credit"></div>
+    </div>
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const TRIP = /*__TRIP__*/null;
+const LIGHT = /*__LIGHT__*/null;
+const I18N = {
+  en: { overview: "Overview", day: "Day", budget: "Budget", todos: "To-dos", street: "Street map", light: "Light map", whole: "Whole trip", days: "days", moving: "on the move", foot: "On foot", car: "By car", transit: "Public transport", gmaps: "Open in Google Maps", sleep: "Sleep", rain: "If it rains", tips: "Tips", lodging: "Where you sleep", practical: "Practical", packing: "Packing", emergency: "Emergency", currency: "Currency", plugs: "Plugs", saver: "Saver", standard: "Standard", comfort: "Comfort", total: "Total", perPerson: "per person", people: "people", category: "Category", item: "Item", buffer: "Buffer 10%", indicative: "≈ indicative: confirm the price before booking", left: "left", late: "overdue", today: "today", by: "by", estimate: "estimate", closed: "closed", free: "free", nightOf: "Night", noMap: "This device can't draw the street map, so the light map is shown.", noData: "Couldn't load the map data, so the light map is shown.", sample: "Sample", unticked: "to do", ticksNote: "Ticks are saved in this browser.", cats: { "getting-there": "Getting there", sleep: "Sleep", "getting-around": "Getting around", car: "Car", food: "Food", activities: "Activities", insurance: "Insurance", buffer: "Buffer", book: "Book", documents: "Documents", money: "Money", pack: "Pack", other: "Other" }, wd: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
+  pt: { overview: "Resumo", day: "Dia", budget: "Orçamento", todos: "A fazer", street: "Mapa de ruas", light: "Mapa simples", whole: "Viagem completa", days: "dias", moving: "em movimento", foot: "A pé", car: "De carro", transit: "Transportes públicos", gmaps: "Abrir no Google Maps", sleep: "Dormir", rain: "Se chover", tips: "Dicas", lodging: "Onde dormes", practical: "Informações práticas", packing: "Na mala", emergency: "Emergência", currency: "Moeda", plugs: "Tomadas", saver: "Económico", standard: "Normal", comfort: "Conforto", total: "Total", perPerson: "por pessoa", people: "pessoas", category: "Categoria", item: "Item", buffer: "Margem 10%", indicative: "≈ indicativo: confirma o preço antes de reservar", left: "faltam", late: "atrasado", today: "hoje", by: "até", estimate: "estimativa", closed: "fechado", free: "grátis", nightOf: "Noite", noMap: "Este dispositivo não consegue desenhar o mapa de ruas; mostra-se o mapa simples.", noData: "Não foi possível carregar os dados do mapa; mostra-se o mapa simples.", sample: "Exemplo", unticked: "por fazer", ticksNote: "As marcações ficam guardadas neste browser.", cats: { "getting-there": "Ida e volta", sleep: "Alojamento", "getting-around": "Deslocações", car: "Carro", food: "Comida", activities: "Atividades", insurance: "Seguro", buffer: "Margem", book: "Reservar", documents: "Documentos", money: "Dinheiro", pack: "Mala", other: "Outro" }, wd: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"] },
+  fr: { overview: "Aperçu", day: "Jour", budget: "Budget", todos: "À faire", street: "Carte des rues", light: "Carte simple", whole: "Tout le voyage", days: "jours", moving: "en déplacement", foot: "À pied", car: "En voiture", transit: "Transports en commun", gmaps: "Ouvrir dans Google Maps", sleep: "Nuit", rain: "S'il pleut", tips: "Conseils", lodging: "Où dormir", practical: "Infos pratiques", packing: "Valise", emergency: "Urgences", currency: "Monnaie", plugs: "Prises", saver: "Éco", standard: "Standard", comfort: "Confort", total: "Total", perPerson: "par personne", people: "personnes", category: "Catégorie", item: "Poste", buffer: "Marge 10 %", indicative: "≈ indicatif : vérifie le prix avant de réserver", left: "restants", late: "en retard", today: "aujourd'hui", by: "avant le", estimate: "estimation", closed: "fermé", free: "gratuit", nightOf: "Nuit", noMap: "Cet appareil ne peut pas afficher la carte des rues ; la carte simple est affichée.", noData: "Impossible de charger les données de carte ; la carte simple est affichée.", sample: "Exemple", unticked: "à faire", ticksNote: "Les cases cochées sont enregistrées dans ce navigateur.", cats: { "getting-there": "Aller-retour", sleep: "Hébergement", "getting-around": "Déplacements", car: "Voiture", food: "Repas", activities: "Activités", insurance: "Assurance", buffer: "Marge", book: "Réserver", documents: "Documents", money: "Argent", pack: "Valise", other: "Autre" }, wd: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] }
+};
+const t = I18N[TRIP.trip.lang] || I18N.en;
+const DAYC = TRIP.days.map((_, i) => `--d${(i % 7) + 1}`);
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`;
+const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const D = s => new Date(s + "T12:00:00");
+const wd = s => t.wd[(D(s).getDay() + 6) % 7];
+const dshort = s => `${wd(s)} ${D(s).getDate()}/${D(s).getMonth() + 1}`;
+const people = (TRIP.group.adults || 0) + (TRIP.group.children || []).length || 1;
+const ndays = TRIP.days.length;
+const money = n => new Intl.NumberFormat(TRIP.trip.lang, { style: "currency", currency: TRIP.budget?.currency || "EUR", maximumFractionDigits: 0 }).format(n);
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const KEY = "tp-" + (TRIP.trip.title + TRIP.trip.start).replace(/\W+/g, "-").toLowerCase();
+
+let view = "overview", day = -1, mode = "street", map = null, lmap = null, markers = [], lLayers = null, streetOk = true;
+let variant = store.get(KEY + "-variant") || "standard";
+let ticks = store.get(KEY + "-ticks") || {};
+const data = { base: null, detail: null, glyphs: null };
+function b64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+
+/* ---------- header + tabs ---------- */
+function header() {
+  const tr = TRIP.trip;
+  $("#eyebrow").textContent = `${dshort(tr.start)} – ${dshort(tr.end)} · ${ndays} ${t.days} · ${people} ${t.people}`;
+  $("#title").textContent = tr.title;
+  $("#note").textContent = tr.note || "";
+  $("#note").hidden = !tr.note;
+  $("#b-street").textContent = t.street; $("#b-light").textContent = t.light;
+  $("#credit").innerHTML = 'Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a>, <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · routes: OSRM · light map: Natural Earth';
+}
+function tabs() {
+  const el = $("#tabs"); el.innerHTML = "";
+  const items = [["overview", -1, t.overview], ...TRIP.days.map((d, i) => ["day", i, `${t.day} ${i + 1}`]), ["budget", -1, t.budget], ["todos", -1, t.todos]];
+  items.forEach(([v, i, label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tab"; b.setAttribute("role", "tab");
+    b.id = v === "day" ? `tab-day-${i + 1}` : `tab-${v}`;
+    b.setAttribute("aria-selected", String(view === v && (v !== "day" || i === day)));
+    if (v === "day") b.style.setProperty("--c", `var(${DAYC[i]})`);
+    b.innerHTML = (v === "day" ? '<span class="sw"></span>' : "") + esc(label);
+    b.onclick = () => go(v === "day" ? `day-${i + 1}` : v);
+    el.appendChild(b);
+  });
+}
+
+/* ---------- views ---------- */
+function timeline(d, c) {
+  const st = d.stops.filter(s => s.time);
+  if (!st.length) return "";
+  const t0 = Math.floor((toMin(st[0].time) - 30) / 60) * 60;
+  const last = st.at(-1), end = toMin(last.time) + (last.minutes || 0);
+  const t1 = Math.ceil((end + 30) / 60) * 60, W = 600, L = 22, R = 22, X = m => L + (m - t0) / (t1 - t0) * (W - L - R);
+  let g = "";
+  for (let h = t0; h <= t1; h += 60) g += `<line x1="${X(h)}" x2="${X(h)}" y1="14" y2="50" stroke="var(--line)"/>${(h - t0) % 120 === 0 ? `<text x="${X(h)}" y="64" text-anchor="middle">${hhmm(h)}</text>` : ""}`;
+  st.forEach((s, i) => {
+    const a = toMin(s.time), b = a + (s.minutes || 0);
+    const leg = d.legs?.[d.stops.indexOf(s)];
+    if (leg && i < st.length - 1) g += `<line x1="${X(b)}" x2="${X(Math.min(b + leg.min, toMin(st[i + 1].time)))}" y1="32" y2="32" stroke="var(--muted)" stroke-width="2" stroke-dasharray="${leg.estimate ? "3 3" : "none"}"/>`;
+    if (s.minutes) g += `<rect x="${X(a)}" y="22" width="${Math.max(3, X(b) - X(a))}" height="20" rx="4" fill="${c}" fill-opacity="${s.kind === "food" ? 0.45 : 0.9}"/>${X(b) - X(a) > 16 ? `<text x="${(X(a) + X(b)) / 2}" y="36" text-anchor="middle" style="fill:var(--surface);font-weight:600">${d.stops.indexOf(s) + 1}</text>` : ""}`;
+    else g += `<circle cx="${X(a)}" cy="32" r="5" fill="${c}"/>`;
+  });
+  return `<svg class="timeline" viewBox="0 0 ${W} 70" role="img" aria-label="${esc(d.title)}: ${st[0].time}–${hhmm(end)}">${g}</svg>`;
+}
+function overviewPanel() {
+  const km = TRIP.days.reduce((a, d) => a + (d.km || 0), 0), mn = TRIP.days.reduce((a, d) => a + (d.minutes || 0), 0);
+  const P = TRIP.practical || {};
+  return `<h2>${t.whole}</h2><div class="facts"><span>${ndays} ${t.days}</span><span>${Math.round(km)} km</span><span>${fmtMin(mn)} ${t.moving}</span></div>
+    <div class="days">${TRIP.days.map((d, i) => `<button type="button" class="dayrow" style="--c:var(${DAYC[i]})" data-d="${i + 1}"><span class="sw"></span><span><b>${dshort(d.date)}</b> · ${esc(d.title)}<br><small>${esc(d.stops[0]?.name)} → ${esc(d.stops.at(-1)?.name)}</small></span><small>${d.km} km · ${fmtMin(d.minutes || 0)}</small></button>`).join("")}</div>
+    ${(TRIP.lodging || []).length ? `<h3>${t.lodging}</h3><dl class="kv">${TRIP.lodging.map(l => `<dt>${esc(l.city)}</dt><dd>${l.picked?.link ? `<a href="${esc(l.picked.link)}" target="_blank" rel="noopener">${esc(l.picked.name)}</a>` : esc(l.picked?.name || "")}${l.picked?.area ? ` · ${esc(l.picked.area)}` : ""} · ${l.nights.map(dshort).join(", ")}</dd>`).join("")}</dl>` : ""}
+    ${P.emergency || P.currency || P.plugs ? `<h3>${t.practical}</h3><dl class="kv">${P.emergency ? `<dt>${t.emergency}</dt><dd>${esc(P.emergency)}</dd>` : ""}${P.currency ? `<dt>${t.currency}</dt><dd>${esc(P.currency)}</dd>` : ""}${P.plugs ? `<dt>${t.plugs}</dt><dd>${esc(P.plugs)}</dd>` : ""}</dl>${(P.notes || []).map(n => `<p class="meta">${esc(n)}</p>`).join("")}` : ""}
+    ${(TRIP.packing || []).length ? `<h3>${t.packing}</h3><p>${TRIP.packing.map(esc).join(" · ")}</p>` : ""}`;
+}
+function dayPanel(i) {
+  const d = TRIP.days[i], c = css(DAYC[i]);
+  const night = (TRIP.lodging || []).find(l => l.nights.includes(d.date));
+  const closedToday = s => (s.closed || []).includes(["mon", "tue", "wed", "thu", "fri", "sat", "sun"][(D(d.date).getDay() + 6) % 7]);
+  return `<h2>${dshort(d.date)} · ${esc(d.title)}</h2>
+    <div class="facts"><span>${t[d.mode] || d.mode}</span><span>${d.km} km</span><span>${fmtMin(d.minutes || 0)} ${t.moving}</span>${(d.legs || []).some(l => l.estimate) ? `<span class="chip warn">${t.estimate}</span>` : ""}</div>
+    ${timeline(d, c)}
+    <ol class="stops">${d.stops.map((s, k) => `${k && d.legs?.[k - 1] ? `<li class="leg">${d.legs[k - 1].km} km · ${fmtMin(d.legs[k - 1].min)}${d.legs[k - 1].estimate ? ` (${t.estimate})` : ""}</li>` : ""}
+      <li class="stop" data-i="${k}" tabindex="0"><span class="num">${k + 1}</span><span><span class="t">${s.time || ""}${s.minutes ? `–${hhmm(toMin(s.time) + s.minutes)}` : ""}</span> <b>${esc(s.name)}</b>${closedToday(s) ? `<span class="chip warn">${t.closed}</span>` : ""}
+        ${[s.hours, s.price].filter(Boolean).length ? `<div class="meta">${[s.hours, s.price].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
+        ${s.tip ? `<div class="tip">${esc(s.tip)}</div>` : ""}
+        <div class="meta">${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(new URL(s.link).hostname.replace("www.", ""))}</a> · ` : ""}${s.gmaps ? `<a href="${esc(s.gmaps)}" target="_blank" rel="noopener">Google Maps</a>` : ""}</div></span></li>`).join("")}</ol>
+    <div class="links">${(d.gmaps || []).map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${t.gmaps}: ${esc(l.from)} → ${esc(l.to)}</a>`).join("")}</div>
+    ${night ? `<div class="box"><b>${t.sleep}:</b> ${night.picked?.link ? `<a href="${esc(night.picked.link)}" target="_blank" rel="noopener">${esc(night.picked.name)}</a>` : esc(night.picked?.name || "")}${night.picked?.area ? ` · ${esc(night.picked.area)}` : ""}</div>` : ""}
+    ${d.rain_plan ? `<div class="box"><b>${t.rain}:</b> ${esc(d.rain_plan)}</div>` : ""}
+    ${(d.tips || []).length ? `<div class="box"><b>${t.tips}:</b> ${d.tips.map(esc).join(" ")}</div>` : ""}`;
+}
+function lineTotal(l, v) {
+  const a = l[v] || 0;
+  return { group: a, person: a * people, "person-day": a * people * ndays, day: a * ndays }[l.per || "group"] ?? a;
+}
+function budgetPanel() {
+  const B = TRIP.budget || { lines: [] }, V = ["saver", "standard", "comfort"];
+  const tot = v => B.lines.reduce((s, l) => s + lineTotal(l, v), 0) * 1.1;
+  const cats = {};
+  B.lines.forEach(l => cats[l.category] = (cats[l.category] || 0) + lineTotal(l, variant));
+  cats.buffer = Object.values(cats).reduce((a, b) => a + b, 0) * 0.1;
+  const max = Math.max(...Object.values(cats), 1);
+  const perLabel = l => ({ group: "", person: ` × ${people}`, "person-day": ` × ${people} × ${ndays}`, day: ` × ${ndays}` }[l.per || "group"]);
+  return `<h2>${t.budget}</h2>
+    <div class="seg" role="group" aria-label="${t.budget}" style="margin:10px 0 6px">${V.map(v => `<button type="button" data-v="${v}" aria-pressed="${v === variant}">${t[v]}</button>`).join("")}</div>
+    <div class="tiles"><div><div class="big">${money(tot(variant))}</div><small>${t.total} · ${people} ${t.people}</small></div><div><div class="big" style="font-size:24px">${money(tot(variant) / people)}</div><small>${t.perPerson}</small></div></div>
+    <div class="bars">${Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="brow"><span>${t.cats[k] || k}</span><span class="track"><span class="fill" style="display:block;width:${(v / max * 100).toFixed(1)}%"></span></span><span>${money(v)}</span></div>`).join("")}</div>
+    <div class="tablewrap"><table><thead><tr><th>${t.item}</th>${V.map(v => `<th class="n${v === variant ? " cur" : ""}">${t[v]}</th>`).join("")}</tr></thead><tbody>
+      ${B.lines.map(l => `<tr><td>${l.indicative ? "≈ " : ""}${esc(l.label)}<div class="meta" style="font-size:12px;color:var(--muted)">${t.cats[l.category] || l.category}${perLabel(l)}</div></td>${V.map(v => `<td class="n${v === variant ? " cur" : ""}">${money(lineTotal(l, v))}</td>`).join("")}</tr>`).join("")}
+      <tr><td>${t.buffer}</td>${V.map(v => `<td class="n${v === variant ? " cur" : ""}">${money(tot(v) / 11)}</td>`).join("")}</tr>
+      <tr class="tot"><td>${t.total}</td>${V.map(v => `<td class="n${v === variant ? " cur" : ""}">${money(tot(v))}</td>`).join("")}</tr></tbody></table></div>
+    ${B.lines.some(l => l.indicative) ? `<p class="note">${t.indicative}</p>` : ""}`;
+}
+function todosPanel() {
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const list = [...(TRIP.todos || [])].sort((a, b) => (a.due || "9").localeCompare(b.due || "9"));
+  const left = list.filter(x => !ticks[x.id]).length;
+  return `<h2>${t.todos}</h2><div class="facts"><span>${left} ${t.unticked}</span></div>
+    ${list.map(x => { const dd = x.due ? Math.round((D(x.due) - today) / 864e5) : null;
+      return `<div class="todo${ticks[x.id] ? " done" : ""}"><input type="checkbox" id="todo-${esc(x.id)}" data-id="${esc(x.id)}"${ticks[x.id] ? " checked" : ""}>
+      <label for="todo-${esc(x.id)}"><span class="what">${esc(x.text)}</span><span class="chip">${t.cats[x.category] || x.category || ""}</span>
+      <div class="meta">${[x.owner, x.cost].filter(Boolean).map(esc).join(" · ")}${x.link ? `${x.owner || x.cost ? " · " : ""}<a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(new URL(x.link).hostname.replace("www.", ""))}</a>` : ""}</div></label>
+      <span class="due${dd !== null && dd < 0 && !ticks[x.id] ? " late" : ""}">${x.due ? `${t.by} ${dshort(x.due)}<br><span class="meta">${dd < 0 ? t.late : dd === 0 ? t.today : `${dd} d`}</span>` : ""}</span></div>`; }).join("")}
+    <p class="note">${t.ticksNote}</p>`;
+}
+function render() {
+  tabs();
+  const p = $("#panel"), wide = view === "budget" || view === "todos";
+  $("#grid").classList.toggle("wide", wide); $("#mapcol").hidden = wide; $("#mapseg").hidden = wide;
+  p.style.removeProperty("--c");
+  if (view === "overview") p.innerHTML = overviewPanel();
+  if (view === "day") { p.style.setProperty("--c", `var(${DAYC[day]})`); p.innerHTML = dayPanel(day); }
+  if (view === "budget") p.innerHTML = budgetPanel();
+  if (view === "todos") p.innerHTML = todosPanel();
+  p.querySelectorAll(".dayrow").forEach(b => b.onclick = () => go("day-" + b.dataset.d));
+  p.querySelectorAll(".stop").forEach(li => { const f = () => focusStop(+li.dataset.i); li.onclick = f; li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f(); } }; });
+  p.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { variant = b.dataset.v; store.set(KEY + "-variant", variant); render(); });
+  p.querySelectorAll(".todo input").forEach(c => c.onchange = () => { ticks[c.dataset.id] = c.checked; store.set(KEY + "-ticks", ticks); render(); });
+  if (!wide) { drawPins(); fit(); applyRouteStyle(); if (mode === "light") drawLight(); }
+}
+function go(h) { if (location.hash !== "#" + h) location.hash = h; else route(); }
+function route() {
+  const h = location.hash.slice(1);
+  const m = h.match(/^day-(\d+)$/);
+  if (m && +m[1] >= 1 && +m[1] <= ndays) { view = "day"; day = +m[1] - 1; }
+  else if (h === "budget" || h === "todos") { view = h; day = -1; }
+  else { view = "overview"; day = -1; }
+  render();
+  if (!$("#mapcol").hidden) { map && map.resize(); lmap && lmap.invalidateSize(); }
+}
+function focusStop(i) {
+  document.querySelectorAll(".stop").forEach(li => li.classList.toggle("on", +li.dataset.i === i));
+  document.querySelectorAll(".pin").forEach(el => el.classList.toggle("on", +el.dataset.i === i));
+  const s = TRIP.days[day].stops[i];
+  if (!s.lonlat) return;
+  if (mode === "street" && map) map.flyTo({ center: s.lonlat, zoom: Math.max(map.getZoom(), 15), duration: 900 });
+  if (mode === "light" && lmap) lmap.flyTo([s.lonlat[1], s.lonlat[0]], Math.max(lmap.getZoom(), 12));
+}
+function bounds(i) {
+  const pts = (i < 0 ? TRIP.days : [TRIP.days[i]]).flatMap(d => [...(d.route || []), ...d.stops.filter(s => s.lonlat).map(s => s.lonlat)]);
+  let w = 180, s = 90, e = -180, n = -90;
+  pts.forEach(([x, y]) => { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); });
+  return [[w, s], [e, n]];
+}
+function fit() {
+  const b = bounds(day);
+  if (mode === "street" && map) map.fitBounds(b, { padding: 48, duration: 700, maxZoom: 15.5 });
+  if (mode === "light" && lmap) lmap.fitBounds([[b[0][1], b[0][0]], [b[1][1], b[1][0]]], { padding: [30, 30], maxZoom: 13 });
+}
+
+/* ---------- street map: MapLibre, tiles served from the files published with the page ---------- */
+function makeStyle() {
+  const c = n => css("--map-" + n);
+  const Ls = [{ id: "bg", type: "background", paint: { "background-color": c("land") } }];
+  for (const src of ["base", "detail"]) {
+    const z0 = src === "detail" ? 12 : 0, cls = list => ["in", ["get", "class"], ["literal", list]];
+    Ls.push(
+      { id: src + "-urban", type: "fill", source: src, "source-layer": "landuse", minzoom: z0, filter: cls(["residential", "suburb", "neighbourhood", "commercial", "industrial", "retail"]), paint: { "fill-color": c("urban") } },
+      { id: src + "-water", type: "fill", source: src, "source-layer": "water", minzoom: z0, paint: { "fill-color": c("water") } },
+      { id: src + "-waterway", type: "line", source: src, "source-layer": "waterway", minzoom: Math.max(z0, 8), paint: { "line-color": c("water"), "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.6, 14, 2.5] } },
+      { id: src + "-rail", type: "line", source: src, "source-layer": "transportation", minzoom: Math.max(z0, 10), filter: ["==", ["get", "class"], "rail"], paint: { "line-color": c("border"), "line-width": 1, "line-dasharray": [3, 2] } },
+      { id: src + "-minor", type: "line", source: src, "source-layer": "transportation", minzoom: Math.max(z0, 12), filter: cls(["minor", "service", "track", "path"]), layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c("road"), "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.5, 15, 3, 17, 7] } },
+      { id: src + "-mid", type: "line", source: src, "source-layer": "transportation", minzoom: Math.max(z0, 7), filter: cls(["secondary", "tertiary"]), layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c("road"), "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.4, 12, 1.6, 16, 6] } },
+      { id: src + "-major-case", type: "line", source: src, "source-layer": "transportation", minzoom: z0, filter: cls(["motorway", "trunk", "primary"]), layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c("case"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.8, 10, 2.6, 16, 10] } },
+      { id: src + "-major", type: "line", source: src, "source-layer": "transportation", minzoom: z0, filter: cls(["motorway", "trunk", "primary"]), layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c("major"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 10, 1.6, 16, 8] } }
+    );
+  }
+  Ls.push(
+    { id: "detail-building", type: "fill", source: "detail", "source-layer": "building", minzoom: 14, paint: { "fill-color": c("building"), "fill-opacity": 0.9 } },
+    { id: "border", type: "line", source: "base", "source-layer": "boundary", filter: ["==", ["get", "admin_level"], 2], paint: { "line-color": c("border"), "line-width": 1, "line-dasharray": [4, 2] } }
+  );
+  TRIP.days.forEach((d, i) => Ls.push(
+    { id: `r${i}-case`, type: "line", source: `r${i}`, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": c("halo"), "line-width": ["interpolate", ["linear"], ["zoom"], 6, 3, 14, 8] } },
+    { id: `r${i}`, type: "line", source: `r${i}`, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": css(DAYC[i]), "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.8, 14, 4.5] } }
+  ));
+  const lab = { "text-color": c("label"), "text-halo-color": c("halo"), "text-halo-width": 1.4 };
+  Ls.push(
+    { id: "river-name", type: "symbol", source: "base", "source-layer": "waterway", minzoom: 9, filter: ["==", ["get", "class"], "river"], layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 12, "text-letter-spacing": 0.1 }, paint: { ...lab, "text-color": css("--accent") } },
+    { id: "street-name", type: "symbol", source: "detail", "source-layer": "transportation_name", minzoom: 14, layout: { "symbol-placement": "line", "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11 }, paint: lab },
+    { id: "place-small", type: "symbol", source: "base", "source-layer": "place", minzoom: 9, filter: ["in", ["get", "class"], ["literal", ["village", "suburb", "neighbourhood", "quarter"]]], layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11 }, paint: lab },
+    { id: "place-town", type: "symbol", source: "base", "source-layer": "place", filter: ["in", ["get", "class"], ["literal", ["city", "town"]]], layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Bold"], "text-size": ["interpolate", ["linear"], ["zoom"], 6, 11, 12, 15] }, paint: lab }
+  );
+  const sources = {
+    base: { type: "vector", tiles: ["local://base/{z}/{x}/{y}"], minzoom: 5, maxzoom: 11 },
+    detail: { type: "vector", tiles: ["local://detail/{z}/{x}/{y}"], minzoom: 12, maxzoom: 14 }
+  };
+  TRIP.days.forEach((d, i) => sources[`r${i}`] = { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: (d.route || []).length > 1 ? d.route : [[0, 0], [0, 0]] } } });
+  return { version: 8, glyphs: "local://glyphs/{fontstack}/{range}", sources, layers: Ls };
+}
+function applyRouteStyle() {
+  if (!map || !map.getLayer("r0")) return;
+  TRIP.days.forEach((d, i) => { const o = day < 0 || day === i ? 1 : 0.22; map.setPaintProperty(`r${i}`, "line-opacity", o); map.setPaintProperty(`r${i}-case`, "line-opacity", o); });
+}
+function drawPins() {
+  markers.forEach(m => m.remove()); markers = [];
+  const add = (el, ll) => {
+    if (mode === "street" && map) markers.push(new maplibregl.Marker({ element: el }).setLngLat(ll).addTo(map));
+    if (mode === "light" && lmap) { const m = L.marker([ll[1], ll[0]], { icon: L.divIcon({ html: el.outerHTML, className: "", iconSize: [24, 24], iconAnchor: [12, 12] }) }).addTo(lmap); markers.push(m); }
+  };
+  if (day < 0) TRIP.days.forEach((d, i) => d.stops.forEach(s => { if (!s.lonlat) return; const el = document.createElement("div"); el.className = "dot"; el.style.setProperty("--c", `var(${DAYC[i]})`); add(el, s.lonlat); }));
+  else TRIP.days[day].stops.forEach((s, i) => {
+    if (!s.lonlat) return;
+    const el = document.createElement("div"); el.className = "pin"; el.dataset.i = i; el.textContent = i + 1; el.title = s.name;
+    el.style.setProperty("--c", `var(${DAYC[day]})`); el.onclick = () => focusStop(i); add(el, s.lonlat);
+  });
+  if (mode === "light") document.querySelectorAll("#lmap .pin").forEach(el => el.onclick = () => focusStop(+el.dataset.i));
+}
+async function loadData() {
+  const get = async f => { const r = await fetch(f); if (!r.ok) throw new Error(f + " " + r.status); return r.json(); };
+  [data.base, data.detail, data.glyphs] = await Promise.all([get("tiles-base.json"), get("tiles-detail.json"), get("glyphs.json")]);
+}
+function startStreet() {
+  maplibregl.addProtocol("local", async params => {
+    const [kind, ...rest] = params.url.slice(8).split("/");
+    if (kind === "glyphs") { const s = data.glyphs[decodeURIComponent(rest[0]).split(",")[0] + "/" + rest[1]]; return { data: s ? b64(s) : new ArrayBuffer(0) }; }
+    const s = data[kind] && data[kind][rest.join("/")];
+    return { data: s ? b64(s) : new ArrayBuffer(0) };
+  });
+  const B = LIGHT.bounds;
+  map = new maplibregl.Map({ container: "map", style: makeStyle(), bounds: bounds(day), fitBoundsOptions: { padding: 40 }, minZoom: 5, maxZoom: 17, maxBounds: [[B[0][0] - 1, B[0][1] - 1], [B[1][0] + 1, B[1][1] + 1]], attributionControl: false });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  map.on("load", () => { applyRouteStyle(); drawPins(); });
+  map.once("idle", () => document.body.dataset.map = "ready");
+}
+function startLight() {
+  const B = LIGHT.bounds;
+  lmap = L.map("lmap", { preferCanvas: true, zoomSnap: 0.5, attributionControl: false, maxBounds: [[B[0][1], B[0][0]], [B[1][1], B[1][0]]], minZoom: 6, maxZoom: 15 });
+}
+function drawLight() {
+  if (!lmap) return;
+  if (lLayers) lLayers.remove();
+  const c = n => css("--map-" + n);
+  lLayers = L.layerGroup([
+    L.geoJSON(LIGHT.land, { style: { fillColor: c("land"), fillOpacity: 1, color: c("border"), weight: 0.6 } }),
+    L.geoJSON(LIGHT.borders, { style: { color: c("border"), weight: 1, dashArray: "4 3" } }),
+    L.geoJSON(LIGHT.rivers, { style: { color: c("water"), weight: 2.5 } }),
+    L.geoJSON(LIGHT.roads, { style: { color: c("major"), weight: 1.5 } }),
+    ...LIGHT.towns.features.map(f => L.circleMarker([f.geometry.coordinates[1], f.geometry.coordinates[0]], { radius: 2.5, color: c("label"), weight: 1, fillOpacity: 1 }).bindTooltip(f.properties.name, { permanent: true, direction: "right", className: "town", offset: [4, 0] })),
+    ...TRIP.days.map((d, i) => L.polyline((d.route || []).map(([x, y]) => [y, x]), { color: css(DAYC[i]), weight: 4, opacity: day < 0 || day === i ? 1 : 0.25 }))
+  ]).addTo(lmap);
+}
+function setMode(m) {
+  mode = m; $("#b-street").setAttribute("aria-pressed", String(m === "street")); $("#b-light").setAttribute("aria-pressed", String(m === "light"));
+  $("#map").hidden = m !== "street"; $("#lmap").hidden = m !== "light";
+  if (m === "light") { if (!lmap) startLight(); lmap.invalidateSize(); drawLight(); }
+  if (m === "street" && map) map.resize();
+  drawPins(); fit();
+}
+function fallback(msg) { streetOk = false; $("#b-street").disabled = true; $("#credit").textContent = msg; setMode("light"); }
+$("#b-street").onclick = () => streetOk && setMode("street");
+$("#b-light").onclick = () => setMode("light");
+const restyle = () => { if (map) { map.setStyle(makeStyle()); map.once("styledata", applyRouteStyle); } drawLight(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+addEventListener("hashchange", route);
+
+header(); route();
+loadData().then(() => { try { startStreet(); } catch (e) { fallback(t.noMap); } }).catch(() => fallback(t.noData));
+</script>
