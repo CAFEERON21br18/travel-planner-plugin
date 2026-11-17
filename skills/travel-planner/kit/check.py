@@ -6,7 +6,13 @@ sys.path.insert(0, HERE)
 from common import load, minutes, weekday
 
 PACE = {"relaxed": 6 * 60, "balanced": 8 * 60, "packed": 10 * 60}
-KINDS = {"sight", "food", "view", "activity", "transport", "sleep"}
+KINDS = {"sight", "food", "view", "activity", "transport", "sleep", "night"}
+
+
+def smin(s):
+    """Stop time in minutes; a night stop after midnight (e.g. 00:30) belongs to the evening before."""
+    m = minutes(s["time"])
+    return m + 1440 if s.get("kind") == "night" and m < 720 else m
 REQ = {"trip": ["title", "lang", "start", "end", "pace"], "group": ["adults"]}
 
 
@@ -25,15 +31,15 @@ def data_checks(t):
             if s.get("kind") not in KINDS: bad.append(f"{d['date']} · {s['name']}: kind {s.get('kind')!r} not in {sorted(KINDS)}")
             if weekday(d["date"]) in s.get("closed", []): bad.append(f"{d['date']} · {s['name']}: closed on {weekday(d['date'])}")
             if not s.get("time"): bad.append(f"{d['date']} · {s['name']}: no time"); continue
-            a = minutes(s["time"])
+            a = smin(s)
             if prev_end is not None:
                 travel = d["legs"][i - 1]["min"] if d.get("legs") and i - 1 < len(d["legs"]) else 0
                 if a + 10 < prev_end + travel:
                     bad.append(f"{d['date']} · {s['name']} at {s['time']}: arrives {prev_end + travel - a} min late (previous stop + {travel} min travel)")
             prev_end = a + s.get("minutes", 0)
-        st = [s for s in d["stops"] if s.get("time")]
+        st = [s for s in d["stops"] if s.get("time") and s.get("kind") != "night"]  # nights out don't count towards the day's length
         if st:
-            span = minutes(st[-1]["time"]) + st[-1].get("minutes", 0) - minutes(st[0]["time"])
+            span = smin(st[-1]) + st[-1].get("minutes", 0) - smin(st[0])
             limit = PACE.get(t["trip"]["pace"], 480) + 60  # + buffer allowance
             if span > limit: bad.append(f"{d['date']}: day lasts {span // 60} h {span % 60:02d}, more than the {t['trip']['pace']} pace allows")
         if d.get("mode") == "car" and t["trip"].get("max_drive_hours") and d.get("minutes", 0) > t["trip"]["max_drive_hours"] * 60:

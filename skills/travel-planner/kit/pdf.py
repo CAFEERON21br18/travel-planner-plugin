@@ -37,41 +37,63 @@ def qr_svg(url):
     return buf.getvalue().decode()
 
 
+PAGE_MM, PX_PER_MM, MIN_MAP_MM = 297 - 16 - 18, 96 / 25.4, 30
+
+
+def snapshot(b, base, out, view, mm, overview=False):
+    w = 1240
+    h = 760 if overview else round(w * mm / 180)
+    pg = b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2, color_scheme="light")
+    pg.add_init_script("document.addEventListener('DOMContentLoaded',()=>{const s=document.createElement('style');s.textContent=%s;document.head.appendChild(s)})" % json.dumps(SNAP_CSS % (w, h)))
+    pg.goto(base + "preview.html#" + view)
+    try:
+        pg.wait_for_function("document.body.dataset.map === 'ready'", timeout=20000)
+    except Exception:
+        print(f"  map for {view} did not finish drawing; using what is there", file=sys.stderr)
+    pg.wait_for_timeout(1200)
+    pg.locator(".mapbox").screenshot(path=os.path.join(out, "maps", view + ".png"))
+    pg.close()
+    return {"src": f"maps/{view}.png?h={h}", "mm": mm}
+
+
+def book_page(trip, maps, url):
+    page = open(os.path.join(HERE, "templates", "book.html"), encoding="utf-8").read()
+    page = page.replace("__TITLE__", trip["trip"]["title"].replace("&", "&amp;").replace("<", "&lt;"), 1)
+    page = page.replace("/*__TRIP__*/null", json.dumps(trip, ensure_ascii=False).replace("</", "<\\/"))
+    page = page.replace("/*__MAPS__*/null", json.dumps(maps))
+    page = page.replace("/*__QR__*/null", json.dumps(qr_svg(url) if url else None))
+    page = page.replace("/*__URL__*/null", json.dumps(url))
+    return page.replace("/*__I18N__*/", open(os.path.join(HERE, "templates", "i18n.js"), encoding="utf-8").read())
+
+
 def main(folder, url=None):
     out = os.path.join(folder, "out")
     trip = load(os.path.join(out, "trip.resolved.json"))
     os.makedirs(os.path.join(out, "maps"), exist_ok=True)
     srv, base = serve(out)
     from playwright.sync_api import sync_playwright
-    maps = {}
     with sync_playwright() as p:
         b = p.chromium.launch(args=["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"])
-        views = [("overview", 1240, 760, 0)] + [(f"day-{i + 1}", 1240, round(1240 * map_mm(d) / 180), map_mm(d)) for i, d in enumerate(trip["days"])]
-        for view, w, h, mm in views:
-            pg = b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2, color_scheme="light")
-            pg.add_init_script("document.addEventListener('DOMContentLoaded',()=>{const s=document.createElement('style');s.textContent=%s;document.head.appendChild(s)})" % json.dumps(SNAP_CSS % (w, h)))
-            pg.goto(base + "preview.html#" + view)
-            try:
-                pg.wait_for_function("document.body.dataset.map === 'ready'", timeout=20000)
-            except Exception:
-                print(f"  map for {view} did not finish drawing; using what is there", file=sys.stderr)
-            pg.wait_for_timeout(1200)
-            path = os.path.join(out, "maps", view + ".png")
-            pg.locator(".mapbox").screenshot(path=path)
-            maps[view] = {"src": "maps/" + view + ".png", "mm": mm}
-            pg.close()
-        page = open(os.path.join(HERE, "templates", "book.html"), encoding="utf-8").read()
-        page = page.replace("__TITLE__", trip["trip"]["title"].replace("&", "&amp;").replace("<", "&lt;"), 1)
-        page = page.replace("/*__TRIP__*/null", json.dumps(trip, ensure_ascii=False).replace("</", "<\\/"))
-        page = page.replace("/*__MAPS__*/null", json.dumps(maps))
-        page = page.replace("/*__QR__*/null", json.dumps(qr_svg(url) if url else None))
-        page = page.replace("/*__URL__*/null", json.dumps(url))
-        page = page.replace("/*__I18N__*/", open(os.path.join(HERE, "templates", "i18n.js"), encoding="utf-8").read())
-        open(os.path.join(out, "book.html"), "w", encoding="utf-8").write(page)
-        pg = b.new_page()
-        pg.goto(base + "book.html")
-        pg.wait_for_function("window.BOOK_READY === true", timeout=20000)
-        pg.wait_for_timeout(300)
+        maps = {"overview": snapshot(b, base, out, "overview", 0, overview=True)}
+        for i, d in enumerate(trip["days"]):
+            maps[f"day-{i + 1}"] = snapshot(b, base, out, f"day-{i + 1}", map_mm(d))
+        # Lay the book out at A4 width; a day taller than one page gets a shorter map, up to 3 rounds.
+        pg = b.new_page(viewport={"width": round(180 * PX_PER_MM), "height": 1100})
+        pg.emulate_media(media="print")
+        for _ in range(3):
+            open(os.path.join(out, "book.html"), "w", encoding="utf-8").write(book_page(trip, maps, url))
+            pg.goto(base + "book.html")
+            pg.wait_for_function("window.BOOK_READY === true", timeout=20000)
+            pg.wait_for_timeout(300)
+            heights = pg.evaluate("[...document.querySelectorAll('section.day')].map(s => [s.dataset.day, s.getBoundingClientRect().height])")
+            over = {int(k): h / PX_PER_MM - PAGE_MM for k, h in heights if h / PX_PER_MM > PAGE_MM - 2}
+            fixable = {k: v for k, v in over.items() if maps[f"day-{k}"]["mm"] > MIN_MAP_MM}
+            if not fixable:
+                break
+            for k, v in fixable.items():
+                mm = max(MIN_MAP_MM, round(maps[f"day-{k}"]["mm"] - v - 4))
+                print(f"  day {k} is {v:.0f} mm too tall: map {maps[f'day-{k}']['mm']} -> {mm} mm")
+                maps[f"day-{k}"] = snapshot(b, base, out, f"day-{k}", mm)
         foot = f'<div style="width:100%;font:8px sans-serif;color:#56625f;padding:0 15mm;display:flex;justify-content:space-between"><span>{trip["trip"]["title"].replace("&", "&amp;").replace("<", "&lt;")}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>'
         pdf = os.path.join(out, "trip-book.pdf")
         pg.pdf(path=pdf, format="A4", print_background=True, prefer_css_page_size=True, display_header_footer=True, header_template="<span></span>", footer_template=foot)

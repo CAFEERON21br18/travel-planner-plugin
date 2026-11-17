@@ -44,7 +44,7 @@ def resolve(trip):
         d.update(r)
         d["km"] = round(sum(l["km"] for l in r["legs"]), 1)
         d["minutes"] = sum(l["min"] for l in r["legs"])
-        if any(l.get("estimate") for l in r["legs"]):
+        if d.get("mode") != "transit" and any(l.get("estimate") for l in r["legs"]):  # transit is always an estimate (shown on the page)
             flags.append(f"{d['date']}: travel times are estimates (no router answer for mode {d.get('mode')})")
     return flags
 

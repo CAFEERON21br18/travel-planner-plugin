@@ -31,7 +31,7 @@ Dates are `YYYY-MM-DD`, times `HH:MM` (24 h), money in whole units of `budget.cu
       "id": "d1s1",                          // unique in the trip
       "name": "Livraria Lello",
       "query": "Livraria Lello, Porto",     // what geocoding searches for
-      "kind": "sight | food | view | activity | transport | sleep",
+      "kind": "sight | food | view | activity | transport | sleep | night",   // night: bars/clubs; a time like 00:30 counts as that evening, and nights out don't count towards the pace limit
       "time": "09:30", "minutes": 45,        // planned arrival and time spent
       "hours": "09:30-19:00",               // opening hours as published
       "closed": ["mon"],                     // weekdays it is closed: mon tue wed thu fri sat sun

@@ -131,7 +131,8 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}` : `${m} min`;
 const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
-const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const stopMin = s => toMin(s.time) + (s.kind === "night" && toMin(s.time) < 720 ? 1440 : 0); /* a night stop at 00:30 belongs to the evening before */
+const hhmm = m => { m = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
 const D = s => new Date(s + "T12:00:00");
 const wd = s => t.wd[(D(s).getDay() + 6) % 7];
 const dshort = s => `${wd(s)} ${D(s).getDate()}/${D(s).getMonth() + 1}`;
@@ -143,7 +144,7 @@ const KEY = "tp-" + (TRIP.trip.title + TRIP.trip.start).replace(/\W+/g, "-").toL
 
 let view = "overview", day = -1, mode = "street", map = null, lmap = null, markers = [], lLayers = null, streetOk = true;
 let variant = store.get(KEY + "-variant") || "standard";
-let ticks = store.get(KEY + "-ticks") || {};
+let ticks = store.get(KEY + "-ticks") || {}, shared = null, sharedNote = "";
 const data = { base: null, detail: null, glyphs: null };
 function b64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
 
@@ -176,15 +177,15 @@ function tabs() {
 function timeline(d, c) {
   const st = d.stops.filter(s => s.time);
   if (!st.length) return "";
-  const t0 = Math.floor((toMin(st[0].time) - 30) / 60) * 60;
-  const last = st.at(-1), end = toMin(last.time) + (last.minutes || 0);
+  const t0 = Math.floor((stopMin(st[0]) - 30) / 60) * 60;
+  const last = st.at(-1), end = stopMin(last) + (last.minutes || 0);
   const t1 = Math.ceil((end + 30) / 60) * 60, W = 600, L = 22, R = 22, X = m => L + (m - t0) / (t1 - t0) * (W - L - R);
   let g = "";
   for (let h = t0; h <= t1; h += 60) g += `<line x1="${X(h)}" x2="${X(h)}" y1="14" y2="50" stroke="var(--line)"/>${(h - t0) % 120 === 0 ? `<text x="${X(h)}" y="64" text-anchor="middle">${hhmm(h)}</text>` : ""}`;
   st.forEach((s, i) => {
-    const a = toMin(s.time), b = a + (s.minutes || 0);
+    const a = stopMin(s), b = a + (s.minutes || 0);
     const leg = d.legs?.[d.stops.indexOf(s)];
-    if (leg && i < st.length - 1) g += `<line x1="${X(b)}" x2="${X(Math.min(b + leg.min, toMin(st[i + 1].time)))}" y1="32" y2="32" stroke="var(--muted)" stroke-width="2" stroke-dasharray="${leg.estimate ? "3 3" : "none"}"/>`;
+    if (leg && i < st.length - 1) g += `<line x1="${X(b)}" x2="${X(Math.min(b + leg.min, stopMin(st[i + 1])))}" y1="32" y2="32" stroke="var(--muted)" stroke-width="2" stroke-dasharray="${leg.estimate ? "3 3" : "none"}"/>`;
     if (s.minutes) g += `<rect x="${X(a)}" y="22" width="${Math.max(3, X(b) - X(a))}" height="20" rx="4" fill="${c}" fill-opacity="${s.kind === "food" ? 0.45 : 0.9}"/>${X(b) - X(a) > 16 ? `<text x="${(X(a) + X(b)) / 2}" y="36" text-anchor="middle" style="fill:var(--surface);font-weight:600">${d.stops.indexOf(s) + 1}</text>` : ""}`;
     else g += `<circle cx="${X(a)}" cy="32" r="5" fill="${c}"/>`;
   });
@@ -207,7 +208,7 @@ function dayPanel(i) {
     <div class="facts"><span>${t[d.mode] || d.mode}</span><span>${d.km} km</span><span>${fmtMin(d.minutes || 0)} ${t.moving}</span>${(d.legs || []).some(l => l.estimate) ? `<span class="chip warn">${t.estimate}</span>` : ""}</div>
     ${timeline(d, c)}
     <ol class="stops">${d.stops.map((s, k) => `${k && d.legs?.[k - 1] ? `<li class="leg">${d.legs[k - 1].km} km · ${fmtMin(d.legs[k - 1].min)}${d.legs[k - 1].estimate ? ` (${t.estimate})` : ""}</li>` : ""}
-      <li class="stop" data-i="${k}" tabindex="0"><span class="num">${k + 1}</span><span><span class="t">${s.time || ""}${s.minutes ? `–${hhmm(toMin(s.time) + s.minutes)}` : ""}</span> <b>${esc(s.name)}</b>${closedToday(s) ? `<span class="chip warn">${t.closed}</span>` : ""}
+      <li class="stop" data-i="${k}" tabindex="0"><span class="num">${k + 1}</span><span><span class="t">${s.time || ""}${s.minutes ? `–${hhmm(stopMin(s) + s.minutes)}` : ""}</span> <b>${esc(s.name)}</b>${closedToday(s) ? `<span class="chip warn">${t.closed}</span>` : ""}
         ${[s.hours, s.price].filter(Boolean).length ? `<div class="meta">${[s.hours, s.price].filter(Boolean).map(esc).join(" · ")}</div>` : ""}
         ${s.tip ? `<div class="tip">${esc(s.tip)}</div>` : ""}
         <div class="meta">${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(new URL(s.link).hostname.replace("www.", ""))}</a> · ` : ""}${s.gmaps ? `<a href="${esc(s.gmaps)}" target="_blank" rel="noopener">Google Maps</a>` : ""}</div></span></li>`).join("")}</ol>
@@ -248,7 +249,7 @@ function todosPanel() {
       <label for="todo-${esc(x.id)}"><span class="what">${esc(x.text)}</span><span class="chip">${t.cats[x.category] || x.category || ""}</span>
       <div class="meta">${[x.owner, x.cost].filter(Boolean).map(esc).join(" · ")}${x.link ? `${x.owner || x.cost ? " · " : ""}<a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(new URL(x.link).hostname.replace("www.", ""))}</a>` : ""}</div></label>
       <span class="due${dd !== null && dd < 0 && !ticks[x.id] ? " late" : ""}">${x.due ? `${t.by} ${dshort(x.due)}<br><span class="meta">${dd < 0 ? t.late : dd === 0 ? t.today : `${dd} d`}</span>` : ""}</span></div>`; }).join("")}
-    <p class="note">${t.ticksNote}</p>`;
+    <p class="note">${shared ? t.ticksShared : t.ticksNote}${sharedNote ? " " + sharedNote : ""}</p>`;
 }
 function render() {
   tabs();
@@ -262,7 +263,12 @@ function render() {
   p.querySelectorAll(".dayrow").forEach(b => b.onclick = () => go("day-" + b.dataset.d));
   p.querySelectorAll(".stop").forEach(li => { const f = () => focusStop(+li.dataset.i); li.onclick = f; li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f(); } }; });
   p.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { variant = b.dataset.v; store.set(KEY + "-variant", variant); render(); });
-  p.querySelectorAll(".todo input").forEach(c => c.onchange = () => { ticks[c.dataset.id] = c.checked; store.set(KEY + "-ticks", ticks); render(); });
+  p.querySelectorAll(".todo input").forEach(c => c.onchange = async () => {
+    const id = c.dataset.id, done = c.checked;
+    ticks[id] = done; render();
+    if (shared) { try { await shared.doc("ticks/" + id).set({ done, at: new Date().toISOString() }); } catch (e) { sharedNote = t.ticksFailed; render(); } }
+    else store.set(KEY + "-ticks", ticks);
+  });
   if (!wide) { drawPins(); fit(); applyRouteStyle(); if (mode === "light") drawLight(); }
 }
 function go(h) { if (location.hash !== "#" + h) location.hash = h; else route(); }
@@ -402,5 +408,19 @@ new MutationObserver(restyle).observe(document.documentElement, { attributes: tr
 addEventListener("hashchange", route);
 
 header(); route();
+/* Shared to-do ticks: the artifact's database when the viewer is signed in, else this browser only. */
+(async () => {
+  const db = window.claude?.use ? await window.claude.use("db").catch(() => null) : null;
+  if (!db) return;
+  shared = db;
+  const timer = setTimeout(() => { sharedNote = t.ticksWait; if (view === "todos") render(); }, 10000);
+  db.collection("ticks").onSnapshot(snap => {
+    const next = {};
+    snap.docs.forEach(d => { const v = d.data(); if (v && v.done) next[d.id] = true; });
+    ticks = next;
+    if (!snap.metadata.fromCache) { clearTimeout(timer); sharedNote = ""; }
+    if (view === "todos") render();
+  }, () => { clearTimeout(timer); shared = null; sharedNote = ""; ticks = store.get(KEY + "-ticks") || {}; if (view === "todos") render(); });
+})();
 loadData().then(() => { try { startStreet(); } catch (e) { fallback(t.noMap); } }).catch(() => fallback(t.noData));
 </script>
